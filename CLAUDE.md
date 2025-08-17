@@ -1,108 +1,202 @@
-# CLAUDE.md
-
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+# Claude AI Assistant Guide for React-PDF Playground
 
 ## Project Overview
+This is a React-PDF playground/REPL that allows users to write, test, and preview PDF documents using React-PDF components in real-time. It includes a comprehensive example library, documentation, and a live editor with immediate PDF preview.
 
-This is a React PDF REPL (Read-Eval-Print Loop) project that provides an interactive environment for creating and debugging PDF documents using @react-pdf/renderer. It features a Monaco code editor on the left side and a live PDF preview on the right side, with an optional debugger panel at the bottom.
+## Key Features
 
-## Development Commands
+### 1. Live PDF Editor
+- **Monaco Editor**: VS Code-like editing experience
+- **Real-time Preview**: PDFs render as you type
+- **Split Panel Interface**: Adjustable panels for code and preview
+- **Debugging Tools**: Component tree inspector and layout visualization
 
-```bash
-# Install dependencies
-npm install
+### 2. Example Library System
+- **35+ Working Examples**: Comprehensive React-PDF examples
+- **Dropdown Selector**: Easy example selection in editor
+- **Smart Import Handling**: Automatically adds required imports
+- **Categories**: Basic, Styling, Layout, SVG, Advanced
 
-# Run development server on port 10001
-npm run dev
+### 3. Documentation System
+- **19 Official Docs**: Complete React-PDF documentation imported
+- **API Access**: REST endpoints for docs and examples
+- **Reference Guide**: REACT_PDF_REFERENCE.md for quick lookup
 
-# Build for production
-npm run build
+## Architecture
 
-# Start production server on port 10001
-npm start
+### Tech Stack
+- **Framework**: Next.js 13 with App Router
+- **Editor**: Monaco Editor (@monaco-editor/react)
+- **PDF Rendering**: @react-pdf/renderer 3.1.9
+- **Styling**: CSS Modules
+- **PDF Viewer**: pdfjs-dist 3.3.122 (locked version)
+- **State Management**: Jotai
+- **Security**: SES (Secure ECMAScript)
 
-# Run linting
-npm lint
+### Project Structure
+```
+pdf-playground/
+├── app/
+│   ├── api/
+│   │   ├── examples/     # API for fetching examples
+│   │   └── docs/          # API for fetching documentation
+│   ├── repl.js           # Main REPL component
+│   └── page.js           # Entry point
+├── worker/
+│   ├── executer.js       # PDF execution logic
+│   └── to-module.js      # Module conversion
+├── react-pdf-examples/   # 35 JSX example files
+├── react-pdf-docs/       # 19 markdown documentation files
+├── docs/                 # Project documentation
+└── lib/                  # Utility functions
 ```
 
-## Critical Dependencies and Versions
+## Important Implementation Details
 
-**Node.js Requirements:**
-- Use Node.js 18.x (NOT 22.x) - newer versions have compatibility issues with the canvas module
-- Switch Node version: `nvm use 18`
+### Example Import Handling
+The system automatically detects and adds missing imports:
+1. Scans code for React-PDF components
+2. Removes duplicate/conflicting imports (e.g., `Text as SvgText`)
+3. Adds `import { ... } from '@react-pdf/renderer'`
+4. Ensures default export exists
 
-**Key Dependencies:**
-- `@react-pdf/renderer`: 3.1.9 (exact version required)
-- `ses`: 0.18.8 (DO NOT upgrade to 1.x - causes Compartment API issues)
-- `@endo/static-module-record`: 0.7.20 (must match ses version)
-- `fontkit`: 2.0.2 (resolves SWC helper issues)
-- `@swc/helpers`: Required for fontkit compatibility
-- `next`: 13.3.0 (uses experimental appDir feature)
+### File Extensions
+- Examples use `.jsx` extension (not `.txt`)
+- This ensures better Vercel deployment support
+- API routes read `.jsx` files directly
 
-## Architecture Overview
+### Version Locking
+- `pdfjs-dist` is locked to exact version `3.3.122`
+- Required for patch-package compatibility
+- Prevents version mismatch on deployment
 
-### Core Components
+## API Endpoints
 
-**Worker System (`/worker`):**
-- `index.js`: Worker wrapper that manages worker lifecycle and communication
-- `executer.js`: Main worker that evaluates user code in a secure Compartment using SES (Secure ECMAScript)
-- `to-module.js`: Handles module creation and virtual module system for React PDF components
-- `process-jsx.js`: Transforms JSX code for execution
-- `better-static-module-record.mjs`: Custom static module record implementation
+### GET /api/examples
+- No params: Returns list of all example names
+- `?name=<example>`: Returns specific example code
 
-**Main Application (`/app`):**
-- `repl.js`: Main REPL component with editor, preview, and debugger panels
-- Uses `react-resizable-panels` for split-panel layout
-- Implements worker communication for secure code execution
-- Handles URL-based code sharing via compressed query parameters
+### GET /api/docs
+- No params: Returns list of all documentation files
+- `?name=<doc>`: Returns specific documentation content
 
-**State Management (`/state`):**
-- Uses Jotai for state management
-- `page.js`: Manages PDF page navigation state
-- `debugger.js`: Manages debugger layout and selection state
+## Deployment Considerations
 
-### Security Architecture
+### Vercel Deployment
+1. **Node Version**: Requires 18.x or higher
+2. **Build Command**: `npm run build` (default)
+3. **File System**: Examples/docs are read at build time
+4. **Patches**: patch-package runs in postinstall
 
-The project uses SES (Secure ECMAScript) to create isolated Compartments for executing user code. This prevents malicious code from accessing the host environment while still allowing full React PDF functionality.
+### Known Issues & Solutions
+1. **Import Errors**: System auto-adds missing imports
+2. **ReactPDF.render()**: Automatically removed (not needed)
+3. **Duplicate Text Import**: Handled by import deduplication
 
-## Common Issues and Solutions
+## Development Commands
+```bash
+npm run dev       # Start development server on port 10001
+npm run build     # Build for production
+npm run lint      # Run linting
+```
 
-### Initial Render Issue
-The PDF may not render on first page load. This is addressed by:
-1. Explicitly starting the worker before initialization
-2. Adding a 100ms delay for the first render
-3. Checking both `isReady` and `pdf` exist before evaluation
+## Working with Examples
 
-### Module Resolution Issues
-If you encounter "@swc/helpers" or fontkit errors:
-1. Ensure Node.js 18 is being used
-2. Check that `@swc/helpers` is installed
-3. Verify fontkit version is 2.0.2
+### Available Example Categories
+- **Basic**: quick-start, text, images, emoji
+- **Styling**: inline-styles, styles, mixed-styles, media-queries
+- **Layout**: page-breaks, page-numbers, fixed-components
+- **SVG**: circle, path, polygon, gradients
+- **Advanced**: resume, fractals, font-register
 
-### Worker Communication
-The worker system uses postMessage for communication. Key methods:
-- `init()`: Initialize the worker
-- `evaluate()`: Process user code and generate PDF
-- `version()`: Get React PDF version and debugging support status
+### Adding New Examples
+1. Create `.jsx` file in `react-pdf-examples/`
+2. Include React-PDF component code
+3. Ensure default export exists
+4. Example will auto-appear in dropdown
 
-## URL Parameters
+## Common Tasks
 
-The REPL supports code sharing via URL parameters:
-- `gz_code`: Gzip-compressed code
-- `modules`: Boolean flag for module support
-- `cp_`: LZ-string compressed parameters
+### Updating Examples
+1. Edit files in `react-pdf-examples/*.jsx`
+2. Test locally with `npm run dev`
+3. Commit and push changes
 
-## Development Notes
+### Debugging PDF Rendering
+1. Check browser console for errors
+2. Verify imports are correct
+3. Use debugging panel for layout inspection
+4. Check worker logs if PDF fails to render
 
-- The project uses Next.js 13 with experimental app directory
-- Monaco Editor is loaded dynamically for client-side only rendering
-- PDF viewer uses pdfjs-dist with custom patches (see `/patches`)
-- The worker must be explicitly started with `pdf.start()` before use
-- Multiple Jotai instances warning can be ignored (known issue)
+### Fixing Import Issues
+The system handles most import issues automatically:
+- Missing imports are detected and added
+- Duplicate imports are removed
+- ReactPDF namespace is added when needed
 
-## Key Files to Understand
+## Best Practices
 
-1. `/app/repl.js` - Main REPL interface and worker coordination
-2. `/worker/executer.js` - Code evaluation and sandboxing logic
-3. `/worker/to-module.js` - Module system and React PDF integration
-4. `/next.config.js` - Webpack configuration for worker files and aliases
+### When Modifying Code
+1. Test all example categories after changes
+2. Ensure examples render without errors
+3. Verify dropdown loads all examples
+4. Check API endpoints work correctly
+
+### For Performance
+1. Examples are loaded once at module level
+2. PDF rendering happens in web worker
+3. Code splitting via Next.js is automatic
+
+### For Maintenance
+1. Keep pdfjs-dist version locked
+2. Test deployment on Vercel after major changes
+3. Update this documentation when adding features
+4. Maintain backwards compatibility with examples
+
+## Troubleshooting
+
+### Common Errors
+
+**StyleSheet is not defined**
+- Auto-import system will add it
+- Manually add: `import { StyleSheet } from '@react-pdf/renderer'`
+
+**Text is not defined**
+- Caused by duplicate imports
+- System removes `Text as SvgText` conflicts
+
+**API returns 500**
+- Check if examples directory exists
+- Verify `.jsx` files are present
+- Check build logs for errors
+
+### Vercel Deployment Issues
+1. Ensure `pdfjs-dist` is locked to `3.3.122`
+2. Verify all example files are `.jsx`
+3. Check Node.js version is 18.x+
+4. Monitor build logs for patch-package success
+
+## Recent Updates (2024)
+
+### Features Added
+1. Examples dropdown in editor
+2. React-PDF documentation import
+3. API endpoints for examples/docs
+4. Smart import detection
+5. Vercel deployment fixes
+
+### Files Changed
+- Renamed examples from `.txt` to `.jsx`
+- Updated API routes for better error handling
+- Fixed import detection for all React-PDF components
+- Added comprehensive documentation
+
+## Resources
+- [React-PDF Documentation](./REACT_PDF_REFERENCE.md)
+- [Vercel Deployment Guide](./VERCEL_DEPLOYMENT.md)
+- [Import Summary](./IMPORT_SUMMARY.md)
+- [Official React-PDF Repo](https://github.com/diegomura/react-pdf)
+
+---
+
+*This guide is for Claude AI or other assistants working on this codebase. Keep it updated with significant changes.*
