@@ -1,0 +1,294 @@
+{
+  "documentation": {
+    "getting-started": [
+      {
+        "file": "quick-start.md",
+        "title": "Quick Start",
+        "description": "Basic setup and first PDF document"
+      },
+      {
+        "file": "components.md",
+        "title": "Components",
+        "description": "Complete list of available components"
+      },
+      {
+        "file": "styling.md",
+        "title": "Styling",
+        "description": "How to style PDF components"
+      },
+      {
+        "file": "rendering-process.md",
+        "title": "Rendering Process",
+        "description": "Understanding how React-PDF renders documents"
+      }
+    ],
+    "advanced": [
+      {
+        "file": "advanced.md",
+        "title": "Advanced",
+        "description": "Advanced techniques and patterns"
+      },
+      {
+        "file": "dynamic-content.md",
+        "title": "Dynamic Content",
+        "description": "Generating dynamic PDFs"
+      },
+      {
+        "file": "fonts.md",
+        "title": "Fonts",
+        "description": "Custom fonts configuration"
+      },
+      {
+        "file": "hyphenation.md",
+        "title": "Hyphenation",
+        "description": "Text hyphenation support"
+      },
+      {
+        "file": "svg.md",
+        "title": "SVG",
+        "description": "SVG support in PDFs"
+      },
+      {
+        "file": "hooks.md",
+        "title": "Hooks",
+        "description": "Available React hooks for PDFs"
+      },
+      {
+        "file": "page-wrapping.md",
+        "title": "Page Wrapping",
+        "description": "Page break and wrapping control"
+      },
+      {
+        "file": "orphan-widow-protection.md",
+        "title": "Orphan & Widow Protection",
+        "description": "Typography control for orphans and widows"
+      },
+      {
+        "file": "document-navigation.md",
+        "title": "Document Navigation",
+        "description": "Creating navigable PDFs"
+      }
+    ],
+    "deployment": [
+      {
+        "file": "node.md",
+        "title": "Node.js",
+        "description": "Server-side rendering with Node.js"
+      },
+      {
+        "file": "express.md",
+        "title": "Express",
+        "description": "Express.js integration"
+      },
+      {
+        "file": "web-workers.md",
+        "title": "Web Workers",
+        "description": "Using web workers for rendering"
+      },
+      {
+        "file": "on-the-fly.md",
+        "title": "On The Fly",
+        "description": "Generating PDFs on demand"
+      },
+      {
+        "file": "compatibility.md",
+        "title": "Compatibility",
+        "description": "Browser and environment compatibility"
+      }
+    ],
+    "development": [
+      {
+        "file": "debugging.md",
+        "title": "Debugging",
+        "description": "Debugging techniques for React-PDF"
+      }
+    ]
+  },
+  "examples": {
+    "basic": [
+      {
+        "file": "quick-start.txt",
+        "title": "Quick Start",
+        "description": "Basic PDF example"
+      },
+      {
+        "file": "text.txt",
+        "title": "Text",
+        "description": "Text component examples"
+      },
+      {
+        "file": "images.txt",
+        "title": "Images",
+        "description": "Image handling"
+      },
+      {
+        "file": "emoji.txt",
+        "title": "Emoji",
+        "description": "Emoji support"
+      }
+    ],
+    "styling": [
+      {
+        "file": "inline-styles.txt",
+        "title": "Inline Styles",
+        "description": "Inline styling"
+      },
+      {
+        "file": "styles.txt",
+        "title": "Styles",
+        "description": "Style objects"
+      },
+      {
+        "file": "mixed-styles.txt",
+        "title": "Mixed Styles",
+        "description": "Combining style approaches"
+      },
+      {
+        "file": "media-queries.txt",
+        "title": "Media Queries",
+        "description": "Responsive PDFs with media queries"
+      }
+    ],
+    "svg": [
+      {
+        "file": "svg.txt",
+        "title": "SVG",
+        "description": "Basic SVG usage"
+      },
+      {
+        "file": "circle.txt",
+        "title": "Circle",
+        "description": "SVG circle"
+      },
+      {
+        "file": "ellipse.txt",
+        "title": "Ellipse",
+        "description": "SVG ellipse"
+      },
+      {
+        "file": "line.txt",
+        "title": "Line",
+        "description": "SVG line"
+      },
+      {
+        "file": "path.txt",
+        "title": "Path",
+        "description": "SVG path"
+      },
+      {
+        "file": "polygon.txt",
+        "title": "Polygon",
+        "description": "SVG polygon"
+      },
+      {
+        "file": "polyline.txt",
+        "title": "Polyline",
+        "description": "SVG polyline"
+      },
+      {
+        "file": "rect.txt",
+        "title": "Rectangle",
+        "description": "SVG rectangle"
+      },
+      {
+        "file": "g.txt",
+        "title": "Groups",
+        "description": "SVG groups"
+      },
+      {
+        "file": "svgtext.txt",
+        "title": "SVG Text",
+        "description": "SVG text"
+      },
+      {
+        "file": "clippath.txt",
+        "title": "Clip Path",
+        "description": "SVG clipping paths"
+      },
+      {
+        "file": "lineargradient.txt",
+        "title": "Linear Gradient",
+        "description": "Linear gradients"
+      },
+      {
+        "file": "radialgradient.txt",
+        "title": "Radial Gradient",
+        "description": "Radial gradients"
+      }
+    ],
+    "layout": [
+      {
+        "file": "page-breaks.txt",
+        "title": "Page Breaks",
+        "description": "Page break control"
+      },
+      {
+        "file": "page-numbers.txt",
+        "title": "Page Numbers",
+        "description": "Adding page numbers"
+      },
+      {
+        "file": "page-wrap.txt",
+        "title": "Page Wrap",
+        "description": "Page wrapping examples"
+      },
+      {
+        "file": "breakable-unbreakable.txt",
+        "title": "Breakable/Unbreakable",
+        "description": "Breakable/unbreakable content"
+      },
+      {
+        "file": "fixed-components.txt",
+        "title": "Fixed Components",
+        "description": "Fixed positioned components"
+      },
+      {
+        "file": "orphans-and-widows.txt",
+        "title": "Orphans & Widows",
+        "description": "Typography control"
+      },
+      {
+        "file": "disable-wrapping.txt",
+        "title": "Disable Wrapping",
+        "description": "Disable text wrapping"
+      },
+      {
+        "file": "disable-hyphenation.txt",
+        "title": "Disable Hyphenation",
+        "description": "Disable hyphenation"
+      }
+    ],
+    "advanced": [
+      {
+        "file": "fractals.txt",
+        "title": "Fractals",
+        "description": "Fractal generation example"
+      },
+      {
+        "file": "resume.txt",
+        "title": "Resume",
+        "description": "Complete resume example"
+      },
+      {
+        "file": "font-register.txt",
+        "title": "Font Register",
+        "description": "Custom font registration"
+      },
+      {
+        "file": "hyphenation-callback.txt",
+        "title": "Hyphenation Callback",
+        "description": "Custom hyphenation"
+      },
+      {
+        "file": "debugging.txt",
+        "title": "Debugging",
+        "description": "Debugging example"
+      },
+      {
+        "file": "knobs.txt",
+        "title": "Knobs",
+        "description": "Interactive knobs example"
+      }
+    ]
+  }
+}

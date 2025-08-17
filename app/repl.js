@@ -156,6 +156,8 @@ const Repl = () => {
   const [isReady, setReady] = useState(false);
   const [code, setCode] = useState(() => urlParams.code ?? defCode);
   const [v, forceRender] = useReducer((v) => !v);
+  const [examples, setExamples] = useState([]);
+  const [selectedExample, setSelectedExample] = useState("");
 
   const [pageV] = useAtom(page);
   const [, setPagesCount] = useAtom(pagesCount);
@@ -172,6 +174,161 @@ const Repl = () => {
   const debuggerAPI = useRef();
   const editorPanelAPI = useRef();
 
+  // Fetch examples on mount
+  useEffect(() => {
+    fetch('/api/examples')
+      .then(res => res.json())
+      .then(data => {
+        if (data.examples) {
+          setExamples(data.examples);
+        }
+      })
+      .catch(err => console.error('Failed to fetch examples:', err));
+  }, []);
+
+  // Handle example selection
+  const handleExampleChange = (exampleName) => {
+    if (!exampleName) return;
+    
+    setSelectedExample(exampleName);
+    fetch(`/api/examples?name=${exampleName}`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.code) {
+          // Process the code to handle imports properly
+          let processedCode = data.code;
+          
+          // Remove ReactPDF.render() calls as they're not needed in the playground
+          processedCode = processedCode.replace(/ReactPDF\.render\([^)]*\);?/g, '');
+          
+          // Check if there are commented import statements
+          const hasCommentedImports = processedCode.includes('// import');
+          
+          if (hasCommentedImports) {
+            // Extract ALL import statements (could be multiple lines)
+            const importMatches = processedCode.match(/\/\/ import.*?from.*?;?\n/g);
+            if (importMatches) {
+              // Collect all imports, but avoid duplicates with different names
+              const allImports = new Set();
+              const baseImports = new Set(); // Track base names to avoid conflicts
+              
+              importMatches.forEach(match => {
+                const importContent = match.match(/\{([^}]+)\}/);
+                if (importContent) {
+                  const imports = importContent[1].split(',').map(i => i.trim());
+                  imports.forEach(imp => {
+                    // Check if it's a renamed import (e.g., "Text as SvgText")
+                    if (imp.includes(' as ')) {
+                      const [baseName, ] = imp.split(' as ').map(s => s.trim());
+                      // Skip if we already have the base import
+                      if (!baseImports.has(baseName)) {
+                        // Don't add renamed imports if base is already there
+                        if (baseName === 'Text') {
+                          // Skip Text as SvgText since we'll use Text directly
+                          return;
+                        }
+                        allImports.add(imp);
+                        baseImports.add(baseName);
+                      }
+                    } else {
+                      allImports.add(imp);
+                      baseImports.add(imp);
+                    }
+                  });
+                }
+              });
+              
+              if (allImports.size > 0) {
+                // Add all imports at the beginning and remove all comment lines
+                processedCode = `import { ${Array.from(allImports).join(', ')} } from '@react-pdf/renderer';\n\n` + 
+                               processedCode.replace(/^\/\/.*\n/gm, '');
+              }
+            }
+          } else {
+            // Check if any React-PDF components are used without imports
+            const hasImports = processedCode.includes("from '@react-pdf/renderer'");
+            if (!hasImports) {
+              // Detect which components are being used - comprehensive list
+              const componentsUsed = new Set();
+              
+              // All possible React-PDF exports
+              const allComponents = [
+                // Core components
+                'Document', 'Page', 'View', 'Text', 'Link', 'Image', 'Note', 'Canvas',
+                // Style utilities
+                'StyleSheet', 'Font',
+                // SVG components
+                'Svg', 'SVG', 'Line', 'Polyline', 'Polygon', 'Path', 'Rect', 
+                'Circle', 'Ellipse', 'Tspan', 'G', 
+                'Stop', 'Defs', 'ClipPath', 'LinearGradient', 'RadialGradient',
+                // Hooks
+                'usePDF',
+                // Renderers
+                'PDFViewer', 'PDFDownloadLink', 'BlobProvider',
+                // Other utilities
+                'pdf', 'renderToStream', 'renderToString', 'renderToFile',
+                'createInstance'
+              ];
+              
+              allComponents.forEach(comp => {
+                // Check for component usage in various contexts
+                const patterns = [
+                  `<${comp}[\\s>]`, // JSX usage
+                  `${comp}\\.`, // Static method calls
+                  `\\b${comp}\\(`, // Function calls
+                  `const.*=.*${comp}`, // Assignments
+                ];
+                
+                const regex = new RegExp(patterns.join('|'), 'g');
+                if (regex.test(processedCode)) {
+                  componentsUsed.add(comp);
+                }
+              });
+              
+              // Always include commonly used ones if Document is present
+              if (processedCode.includes('<Document')) {
+                ['Document', 'Page', 'View', 'Text', 'StyleSheet'].forEach(comp => {
+                  componentsUsed.add(comp);
+                });
+              }
+              
+              // Add imports if components are detected
+              if (componentsUsed.size > 0) {
+                const importList = Array.from(componentsUsed).join(', ');
+                processedCode = `import { ${importList} } from '@react-pdf/renderer';\n\n` + processedCode;
+              }
+            }
+            
+            // Remove regular comment lines but keep imports
+            processedCode = processedCode.replace(/^\/\/(?!.*import).*\n/gm, '');
+          }
+          
+          // Handle ReactPDF namespace if still present
+          if (processedCode.includes('ReactPDF')) {
+            processedCode = `import * as ReactPDF from '@react-pdf/renderer';\n` + processedCode;
+          }
+          
+          // Ensure there's a default export
+          if (!processedCode.includes('export default')) {
+            // Try to find the main component and export it
+            const componentMatch = processedCode.match(/const (\w+) = \(\) => \(\s*<Document/);
+            if (componentMatch) {
+              processedCode += `\nexport default ${componentMatch[1]};`;
+            } else {
+              // Check for direct JSX assignment
+              const docMatch = processedCode.match(/const (\w+) = \(\s*<Document/);
+              if (docMatch) {
+                processedCode += `\nexport default () => ${docMatch[1]};`;
+              }
+            }
+          }
+          
+          setCode(processedCode);
+        }
+      })
+      .catch(err => console.error('Failed to load example:', err));
+  };
+
   useEffect(() => {
     if (isReady) {
       pdf.call("version").then(({ version, isDebuggingSupported }) =>
@@ -181,35 +338,44 @@ const Repl = () => {
         })
       );
     } else {
-      pdf.call("init").then(() => setReady(true));
+      // Ensure worker is started and then initialize
+      if (pdf) {
+        pdf.start();
+        pdf.call("init").then(() => setReady(true));
+      }
     }
   }, [pdf, update, isReady, options.modules]);
 
   useEffect(() => {
-    if (isReady) {
-      const startTime = Date.now();
-      pdf
-        .call("evaluate", {
-          code,
-          options: { modules: options.modules },
-          timeout: timeout.current,
-        })
-        .then(({ url, layout }) => {
-          if (layout) {
-            setLayout(addId(layout));
-          } else {
-            setLayout(null);
-          }
-          update({ url, time: Date.now() - startTime, error: null });
-        })
-        .catch((error) => {
-          if (error.fatal) {
-            log.error(error.message, {
-              link: createLink({ code, ...options }),
-            });
-          }
-          update({ time: Date.now() - startTime, error });
-        });
+    if (isReady && pdf) {
+      // Add a small delay for the first render to ensure worker is fully ready
+      const delay = state.url === null ? 100 : 0;
+      
+      setTimeout(() => {
+        const startTime = Date.now();
+        pdf
+          .call("evaluate", {
+            code,
+            options: { modules: options.modules },
+            timeout: timeout.current,
+          })
+          .then(({ url, layout }) => {
+            if (layout) {
+              setLayout(addId(layout));
+            } else {
+              setLayout(null);
+            }
+            update({ url, time: Date.now() - startTime, error: null });
+          })
+          .catch((error) => {
+            if (error.fatal) {
+              log.error(error.message, {
+                link: createLink({ code, ...options }),
+              });
+            }
+            update({ time: Date.now() - startTime, error });
+          });
+      }, delay);
     }
   }, [pdf, code, update, isReady, setLayout, options, v]);
 
@@ -221,34 +387,119 @@ const Repl = () => {
       collapsible
       onCollapse={(collapsed) => update({ isEditing: !collapsed })}
     >
-      <Editor
-        loading={<Loader />}
-        language="javascript"
-        value={code}
-        onChange={(newCode) => {
-          setCode(newCode ?? "");
-        }}
-        beforeMount={(_monaco) => {
-          _monaco.languages.typescript.javascriptDefaults.setCompilerOptions({
-            allowNonTsExtensions: true,
-            checkJs: true,
-            allowJs: true,
-            noLib: true,
-            jsx: "react",
-          });
-          _monaco.languages.typescript.javascriptDefaults.setDiagnosticsOptions(
-            { noSemanticValidation: true }
-          );
-        }}
-        options={{
-          wordWrap: "on",
-          tabSize: 2,
-          minimap: {
-            enabled: false,
-          },
-          contextmenu: false,
-        }}
-      />
+      <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+        <div style={{ 
+          padding: '8px', 
+          borderBottom: '1px solid #e0e0e0',
+          backgroundColor: '#fafafa',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px'
+        }}>
+          <label style={{ fontSize: '12px', fontWeight: '500' }}>
+            Examples:
+          </label>
+          <select 
+            value={selectedExample}
+            onChange={(e) => handleExampleChange(e.target.value)}
+            style={{
+              padding: '4px 8px',
+              fontSize: '12px',
+              border: '1px solid #ccc',
+              borderRadius: '4px',
+              backgroundColor: 'white',
+              cursor: 'pointer',
+              flex: 1,
+              maxWidth: '300px'
+            }}
+          >
+            <option value="">Select an example...</option>
+            <optgroup label="Basic">
+              {examples.filter(ex => ['quick-start', 'text', 'images', 'emoji'].includes(ex)).map(example => (
+                <option key={example} value={example}>
+                  {example.replace(/-/g, ' ')}
+                </option>
+              ))}
+            </optgroup>
+            <optgroup label="Styling">
+              {examples.filter(ex => ['inline-styles', 'styles', 'mixed-styles', 'media-queries'].includes(ex)).map(example => (
+                <option key={example} value={example}>
+                  {example.replace(/-/g, ' ')}
+                </option>
+              ))}
+            </optgroup>
+            <optgroup label="Layout">
+              {examples.filter(ex => ['page-breaks', 'page-numbers', 'page-wrap', 'fixed-components'].includes(ex)).map(example => (
+                <option key={example} value={example}>
+                  {example.replace(/-/g, ' ')}
+                </option>
+              ))}
+            </optgroup>
+            <optgroup label="Advanced">
+              {examples.filter(ex => ['resume', 'fractals', 'font-register'].includes(ex)).map(example => (
+                <option key={example} value={example}>
+                  {example.replace(/-/g, ' ')}
+                </option>
+              ))}
+            </optgroup>
+            <optgroup label="All Examples">
+              {examples.map(example => (
+                <option key={example} value={example}>
+                  {example.replace(/-/g, ' ')}
+                </option>
+              ))}
+            </optgroup>
+          </select>
+          {selectedExample && (
+            <button
+              onClick={() => {
+                setSelectedExample("");
+                setCode(defCode);
+              }}
+              style={{
+                padding: '4px 8px',
+                fontSize: '12px',
+                border: '1px solid #ccc',
+                borderRadius: '4px',
+                backgroundColor: 'white',
+                cursor: 'pointer'
+              }}
+            >
+              Reset
+            </button>
+          )}
+        </div>
+        <div style={{ flex: 1 }}>
+          <Editor
+            loading={<Loader />}
+            language="javascript"
+            value={code}
+            onChange={(newCode) => {
+              setCode(newCode ?? "");
+            }}
+            beforeMount={(_monaco) => {
+              _monaco.languages.typescript.javascriptDefaults.setCompilerOptions({
+                allowNonTsExtensions: true,
+                checkJs: true,
+                allowJs: true,
+                noLib: true,
+                jsx: "react",
+              });
+              _monaco.languages.typescript.javascriptDefaults.setDiagnosticsOptions(
+                { noSemanticValidation: true }
+              );
+            }}
+            options={{
+              wordWrap: "on",
+              tabSize: 2,
+              minimap: {
+                enabled: false,
+              },
+              contextmenu: false,
+            }}
+          />
+        </div>
+      </div>
     </ResizablePanel>
   );
 

@@ -52,6 +52,7 @@ const nextConfig = {
     config.resolve.alias["iconv-lite"] = false;
     config.resolve.alias["whatwg-fetch"] = false;
     config.resolve.alias["canvas"] = false;
+    config.resolve.alias["@napi-rs/canvas"] = false;
 
     return config;
   },
